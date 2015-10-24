@@ -4,8 +4,9 @@ var _ = require('lodash');
 
 exports.generate = generate;
 
-// configuration might go in a file or db
-var defaultLevels = {
+// configuration of dimensions and their default levels
+// might come from a config file or db
+var DIM_LEVEL = {
   product: 'unit',
   location: 'store',
   calendar: 'week'
@@ -25,6 +26,7 @@ var OP_KIND = {
   divide: 'DIVIDE'
 };
 
+var DIM = Object.keys(DIM_LEVEL);
 var AGG = Object.keys(AGG_PRIM);
 var OP = Object.keys(OP_KIND);
 
@@ -44,15 +46,27 @@ function generate(definitions) {
   }
 
   return {
-    'query_request': requests
+    query_request: requests
   };
 }
 
 function getRequest(definition) {
+  var key = [];
   var measure = [];
 
   if (definition) {
-    var levels = _.defaults(definition.levels || {}, defaultLevels);
+    var levels = _.defaults(definition.levels || {}, DIM_LEVEL);
+
+    if (definition.key) {
+      var keyDefinition = Array.isArray(definition.key) ? definition.key : [definition.key];
+
+      keyDefinition.forEach(function(definition) {
+        var k = getKey(definition, levels);
+
+        if (k)
+          key.push(k);
+      });
+    }
 
     if (definition.measure) {
       var measureDefinition = Array.isArray(definition.measure) ? definition.measure : [definition.measure];
@@ -70,10 +84,35 @@ function getRequest(definition) {
     return_row_numbers: true
   };
 
+  if (key.length)
+    request.key = key;
+
   if (measure.length)
     request.measure = measure;
 
   return request;
+}
+
+function getKey(definition, levels) {
+  var dimension = null;
+
+  DIM.some(function(key) {
+    if (definition[key]) {
+      dimension = key;
+
+      return true;
+    }
+  });
+
+  if (dimension) {
+    return {
+      qualified_level: {
+        dimension: dimension,
+        level: levels[dimension]
+      },
+      attribute: definition[dimension]
+    }
+  }
 }
 
 function getMeasure(definition, levels) {
@@ -165,7 +204,8 @@ function getGrouping(definition, levels) {
     }
   });
 
-  return grouping.length ? grouping : null;
+  if (grouping.length)
+    return grouping;
 }
 
 function getOperation(kind, expr, levels) {
