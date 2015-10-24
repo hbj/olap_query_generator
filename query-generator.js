@@ -194,12 +194,27 @@ function getGrouping(definition, levels) {
 
   var grouping = [];
 
-  definition.forEach(function(dimension) {
-    if (levels[dimension]) {
+  definition.forEach(function(defintion) {
+    var dimension, level;
+
+    if (typeof defintion === 'string') {
+      dimension = defintion;
+      level = levels[dimension];
+    }
+    else {
+      var keys = Object.keys(defintion);
+
+      if (keys.length) {
+        dimension = keys[0];
+        level = defintion[dimension];
+      }
+    }
+
+    if (dimension && level) {
       grouping.push({
         kind: 'MAP',
         dimension: dimension,
-        level: levels[dimension]
+        level: level
       });
     }
   });
