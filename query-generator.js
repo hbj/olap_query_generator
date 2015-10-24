@@ -2,10 +2,20 @@
 
 exports.generate = generate;
 
-function generate(definition) {
-  var requests = [];
+function generate(definitions) {
+  if (definitions) {
+    if (!Array.isArray(definitions))
+      definitions = [definitions];
 
-  requests.push(getRequest(definition));
+    var requests = [];
+
+    definitions.forEach(function(definition) {
+      var request = getRequest(definition);
+
+      if (request)
+        requests.push(request);
+    });
+  }
 
   return {
     'query_request': requests
@@ -17,7 +27,12 @@ function getRequest(definition) {
 
   if (definition) {
     if (definition.metric) {
-      measure.push(getMetric(definition.metric));
+      var metrics = Array.isArray(definition.metric) ? definition.metric : [definition.metric];
+
+      metrics.forEach(function(metric) {
+        if (metric)
+          measure.push(getMetric(metric));
+      });
     }
   }
 
