@@ -11,14 +11,22 @@ var defaultLevels = {
   calendar: 'week'
 };
 
-var aggregationPrimitives = {
+var AGG_PRIM = {
   total: 'TOTAL',
   min: 'MIN',
   max: 'MAX',
   count: 'COUNT'
 };
 
-var aggregations = Object.keys(aggregationPrimitives);
+var OP_KIND = {
+  add: 'ADD',
+  subtract: 'SUBTRACT',
+  multiply: 'MULTIPLY',
+  divide: 'DIVIDE'
+};
+
+var AGG = Object.keys(AGG_PRIM);
+var OP = Object.keys(OP_KIND);
 
 function generate(definitions) {
   if (definitions) {
@@ -74,7 +82,7 @@ function getMeasure(definition, levels) {
 
   var aggregation = null;
 
-  aggregations.some(function(key) {
+  AGG.some(function(key) {
     if (definition[key]) {
       aggregation = key;
 
@@ -84,9 +92,27 @@ function getMeasure(definition, levels) {
 
   if (aggregation) {
     return getAggregation(
-      aggregationPrimitives[aggregation],
+      AGG_PRIM[aggregation],
       getMeasure(definition[aggregation], levels),
       getGrouping(definition.group, levels)
+    );
+  }
+
+  var operation = null;
+
+  OP.some(function(key) {
+    if (definition[key]) {
+      operation = key;
+
+      return true;
+    }
+  });
+
+  if (operation) {
+    return getOperation(
+      OP_KIND[operation],
+      definition[operation],
+      levels
     );
   }
 }
@@ -140,4 +166,28 @@ function getGrouping(definition, levels) {
   });
 
   return grouping.length ? grouping : null;
+}
+
+function getOperation(kind, expr, levels) {
+  if (expr && !Array.isArray(expr))
+    expr = [expr];
+
+  if (!expr || !expr.length)
+    throw new Error('Operation missing expr');
+
+  expr = expr.map(function(measure) {
+    return getMeasure(measure, levels);
+  });
+
+  var operation = {
+    op: {
+      kind: kind
+    },
+    expr: expr
+  };
+
+  return {
+    kind: 'OP',
+    op: operation
+  };
 }
