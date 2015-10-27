@@ -14,6 +14,8 @@
   "author": "Haykel Ben Jemia <hbj@allmas-tn.com>",
   "license": "MIT",
   "dependencies": {
-    "express": "^4.13.3"
+    "body-parser": "^1.14.1",
+    "express": "^4.13.3",
+    "lodash": "^3.10.1"
   }
 }
