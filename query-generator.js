@@ -96,21 +96,16 @@ function getRequest(definition) {
 function getKey(definition, levels) {
   var dimension = null;
 
-  DIM.some(function(key) {
-    if (definition[key]) {
-      dimension = key;
+  if (definition.dimension && DIM_LEVEL[definition.dimension])
+    dimension = definition.dimension;
 
-      return true;
-    }
-  });
-
-  if (dimension) {
+  if (dimension && definition.attribute) {
     return {
       qualified_level: {
         dimension: dimension,
-        level: levels[dimension]
+        level: definition.level || levels[dimension]
       },
-      attribute: definition[dimension]
+      attribute: definition.attribute
     }
   }
 }
