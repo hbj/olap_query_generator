@@ -2,12 +2,17 @@ var express = require('express');
 var bodyParser = require('body-parser');
 var app = express();
 
-var generator = require('./query-generator');
+var QueryGenerator = require('./query-generator');
+var config = require('./config.json');
 
 app.use(bodyParser.json());
 
-app.post('/', function(req, res) {
-  res.json(generator.generate(req.body));
+Object.keys(config).forEach(function(key) {
+  var generator = new QueryGenerator(config[key]);
+
+  app.post('/' + key, function(req, res) {
+    res.json(generator.generate(req.body));
+  });
 });
 
 var server = app.listen(3000, function() {

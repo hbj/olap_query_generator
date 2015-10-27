@@ -2,15 +2,7 @@
 
 var _ = require('lodash');
 
-exports.generate = generate;
-
-// configuration of dimensions and their default levels
-// might come from a config file or db
-var DIM_LEVEL = {
-  product: 'unit',
-  location: 'store',
-  calendar: 'week'
-};
+module.exports = QueryGenerator;
 
 var AGG_PRIM = {
   total: 'TOTAL',
@@ -26,11 +18,18 @@ var OP_KIND = {
   divide: 'DIVIDE'
 };
 
-var DIM = Object.keys(DIM_LEVEL);
 var AGG = Object.keys(AGG_PRIM);
 var OP = Object.keys(OP_KIND);
 
-function generate(definitions) {
+function QueryGenerator(config) {
+  this.config = _.defaults(config || {}, {
+    levels: {}
+  });
+}
+
+QueryGenerator.prototype.generate = function(definitions) {
+  var self = this;
+
   if (definitions) {
     if (!Array.isArray(definitions))
       definitions = [definitions];
@@ -38,7 +37,7 @@ function generate(definitions) {
     var requests = [];
 
     definitions.forEach(function(definition) {
-      var request = getRequest(definition);
+      var request = self.getRequest(definition);
 
       if (request)
         requests.push(request);
@@ -48,20 +47,21 @@ function generate(definitions) {
   return {
     query_request: requests
   };
-}
+};
 
-function getRequest(definition) {
+QueryGenerator.prototype.getRequest = function(definition) {
+  var self = this;
   var key = [];
   var measure = [];
 
   if (definition) {
-    var levels = _.defaults(definition.levels || {}, DIM_LEVEL);
+    var levels = _.defaults(definition.levels || {}, self.config.levels);
 
     if (definition.key) {
       var keyDefinition = Array.isArray(definition.key) ? definition.key : [definition.key];
 
       keyDefinition.forEach(function(definition) {
-        var k = getKey(definition, levels);
+        var k = self.getKey(definition, levels);
 
         if (k)
           key.push(k);
@@ -72,7 +72,7 @@ function getRequest(definition) {
       var measureDefinition = Array.isArray(definition.measure) ? definition.measure : [definition.measure];
 
       measureDefinition.forEach(function(definition) {
-        var m = getMeasure(definition, levels);
+        var m = self.getMeasure(definition, levels);
 
         if (m)
           measure.push(m);
@@ -91,12 +91,13 @@ function getRequest(definition) {
     request.measure = measure;
 
   return request;
-}
+};
 
-function getKey(definition, levels) {
+QueryGenerator.prototype.getKey = function(definition, levels) {
+  var self = this;
   var dimension = null;
 
-  if (definition.dimension && DIM_LEVEL[definition.dimension])
+  if (definition.dimension && self.config.levels[definition.dimension])
     dimension = definition.dimension;
 
   if (dimension && definition.attribute) {
@@ -108,11 +109,13 @@ function getKey(definition, levels) {
       attribute: definition.attribute
     }
   }
-}
+};
 
-function getMeasure(definition, levels) {
+QueryGenerator.prototype.getMeasure = function(definition, levels) {
+  var self = this;
+
   if (typeof definition === 'string')
-    return getMetric(definition);
+    return self.getMetric(definition);
 
   var aggregation = null;
 
@@ -125,10 +128,10 @@ function getMeasure(definition, levels) {
   });
 
   if (aggregation) {
-    return getAggregation(
+    return self.getAggregation(
       AGG_PRIM[aggregation],
-      getMeasure(definition[aggregation], levels),
-      getGrouping(definition.group, levels)
+      self.getMeasure(definition[aggregation], levels),
+      self.getGrouping(definition.group, levels)
     );
   }
 
@@ -143,24 +146,24 @@ function getMeasure(definition, levels) {
   });
 
   if (operation) {
-    return getOperation(
+    return self.getOperation(
       OP_KIND[operation],
       definition[operation],
       levels
     );
   }
-}
+};
 
-function getMetric(name) {
+QueryGenerator.prototype.getMetric = function(name) {
   return {
     kind: 'METRIC',
     metric: {
       name: name
     }
   }
-}
+};
 
-function getAggregation(primitive, expr, grouping) {
+QueryGenerator.prototype.getAggregation = function(primitive, expr, grouping) {
   if (!expr)
     throw new Error('Aggregation missing expr');
 
@@ -178,9 +181,9 @@ function getAggregation(primitive, expr, grouping) {
     kind: 'AGGREGATION',
     aggregation: aggregation
   };
-}
+};
 
-function getGrouping(definition, levels) {
+QueryGenerator.prototype.getGrouping = function(definition, levels) {
   if (!definition)
     return null;
 
@@ -216,9 +219,11 @@ function getGrouping(definition, levels) {
 
   if (grouping.length)
     return grouping;
-}
+};
 
-function getOperation(kind, expr, levels) {
+QueryGenerator.prototype.getOperation = function(kind, expr, levels) {
+  var self = this;
+
   if (expr && !Array.isArray(expr))
     expr = [expr];
 
@@ -226,7 +231,7 @@ function getOperation(kind, expr, levels) {
     throw new Error('Operation missing expr');
 
   expr = expr.map(function(measure) {
-    return getMeasure(measure, levels);
+    return self.getMeasure(measure, levels);
   });
 
   var operation = {
@@ -240,4 +245,4 @@ function getOperation(kind, expr, levels) {
     kind: 'OP',
     op: operation
   };
-}
+};

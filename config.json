@@ -1,0 +1,9 @@
+{
+  "my-store": {
+    "levels": {
+      "product": "unit",
+      "location": "store",
+      "calendar": "week"
+    }
+  }
+}
