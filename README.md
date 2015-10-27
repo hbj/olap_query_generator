@@ -14,7 +14,7 @@
 }
 ```
 
-This creates one service end point `POST` [http://localhost:3000/my-store] configured with the dimensions
+This creates one service end point (`POST`, http://localhost:3000/my-store) configured with the dimensions
 `product`, `location` and `calendar` with the respective default levels `unit`, `store` and `week`.
 
 It's possible to add as many end points as needed.
@@ -33,8 +33,7 @@ Query a metric.
 
 ### Example 2
 
-Query the total profit per week and department and city. Notice that we are requesting labels for both weeks and months,
-where week labels are set through the default calendar level and the month labels are set explicitly.
+Query the total profit per week and department and city.
 
 ```json
 [{
@@ -46,8 +45,7 @@ where week labels are set through the default calendar level and the month label
   "key": [
     {"dimension": "product", "attribute": "label"},
     {"dimension": "location", "attribute": "label"},
-    {"dimension": "calendar", "attribute": "label"},
-    {"dimension": "calendar", "level": "week", "attribute": "label"}
+    {"dimension": "calendar", "attribute": "label"}
   ],
   "measure": [
     {
@@ -65,7 +63,8 @@ where week labels are set through the default calendar level and the month label
 
 ### Example 3
 
-Query the maximum monthly profit per year, city and department.
+Query the maximum monthly profit per year, city and department. Notice that we are requesting labels for both years
+and months, where year labels are set through the default calendar level and the month labels are set explicitly.
 
 ```json
 [{
@@ -77,7 +76,8 @@ Query the maximum monthly profit per year, city and department.
   "key": [
     {"dimension": "product", "attribute": "label"},
     {"dimension": "location", "attribute": "label"},
-    {"dimension": "calendar", "attribute": "label"}
+    {"dimension": "calendar", "attribute": "label"},
+    {"dimension": "calendar", "level": "month", "attribute": "label"}
   ],
   "measure": [{
     "max": {
